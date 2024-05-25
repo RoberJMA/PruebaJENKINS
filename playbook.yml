@@ -2,60 +2,105 @@
 - hosts: all
   become: true
   tasks:
-  - name: Ensure apt cache is up to date
-    apt:
-      update_cache: yes
+    - name: Ensure apt cache is up to date
+      apt:
+        update_cache: yes
 
-  - name: Install Docker
-    apt:
-      name: docker.io
-      state: present
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
 
-  - name: Install Python Pip
-    apt:
-      name: python3-pip
-      state: present
+    - name: Install Python Pip
+      apt:
+        name: python3-pip
+        state: present
 
-  - name: Install Docker SDK for Python
-    pip:
-      name: docker
+    - name: Install Docker SDK for Python
+      pip:
+        name: docker
 
-  - name: Install Kubernetes packages
-    shell: |
-      curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-      apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
-      apt-get update -q
-      apt-get install -qy kubeadm kubelet kubectl
-      
-  - name: Create /vagrant directory with permissions 777
-    file:
-      path: /vagrant
-      state: directory
-      mode: '0777'
-      
-  - name: Create /elk directory with permissions 777
-    file:
-      path: /vagrant/elk
-      state: directory
-      mode: '0777'
-      
-  - name: Initialize Kubernetes master
-    shell: kubeadm init --pod-network-cidr=10.244.0.0/16
-    when: inventory_hostname == 'master'
-    
-  - name: Copy kubeconfig to vagrant user
-    command: cp /etc/kubernetes/admin.conf /home/vagrant/.kube/config
-    when: inventory_hostname == 'master'
-    
-  - name: Install Flannel network plugin
-    shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-    when: inventory_hostname == 'master'
-    
-  - name: Join worker nodes to the cluster
-    shell: "{{ hostvars['master'].kubeadm_join_command }}"
-    when: inventory_hostname != 'master'
-    
-  - name: Get join command
-    shell: kubeadm token create --print-join-command
-    register: kubeadm_join_command
-    when: inventory_hostname == 'master'
+    - name: Install Kubernetes packages
+      shell: |
+        curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+        apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+        apt-get update -q
+        apt-get install -qy kubeadm kubelet kubectl
+
+    - name: Create /vagrant directory with permissions 777
+      file:
+        path: /vagrant
+        state: directory
+        mode: '0777'
+
+    - name: Create /elk directory with permissions 777
+      file:
+        path: /vagrant/elk
+        state: directory
+        mode: '0777'
+
+    - name: Set static IP for master
+      when: inventory_hostname == 'master'
+      block:
+        - name: Configure static IP address
+          template:
+            src: templates/netplan.j2
+            dest: /etc/netplan/01-netcfg.yaml
+
+        - name: Apply network configuration
+          shell: netplan apply
+
+    - name: Set static IP for worker1
+      when: inventory_hostname == 'worker1'
+      block:
+        - name: Configure static IP address
+          template:
+            src: templates/netplan.j2
+            dest: /etc/netplan/01-netcfg.yaml
+
+        - name: Apply network configuration
+          shell: netplan apply
+
+    - name: Set static IP for worker2
+      when: inventory_hostname == 'worker2'
+      block:
+        - name: Configure static IP address
+          template:
+            src: templates/netplan.j2
+            dest: /etc/netplan/01-netcfg.yaml
+
+        - name: Apply network configuration
+          shell: netplan apply
+
+    - name: Initialize Kubernetes master
+      shell: kubeadm init --pod-network-cidr=10.244.0.0/16
+      when: inventory_hostname == 'master'
+
+    - name: Copy kubeconfig to vagrant user
+      command: cp /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+      when: inventory_hostname == 'master'
+
+    - name: Install Flannel network plugin
+      shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+      when: inventory_hostname == 'master'
+
+    - name: Join worker nodes to the cluster
+      shell: "{{ hostvars['master'].kubeadm_join_command }}"
+      when: inventory_hostname != 'master'
+
+    - name: Get join command
+      shell: kubeadm token create --print-join-command
+      register: kubeadm_join_command
+      when: inventory_hostname == 'master'
+
+# templates/netplan.j2
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s3:
+      addresses:
+        - {{ ansible_host }}/24
+      gateway4: 192.168.56.1
+      nameservers:
+        addresses: [8.8.8.8, 8.8.4.4]
