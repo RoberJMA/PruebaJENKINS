@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+data:
+  filebeat.yml: |-
+    filebeat.inputs:
+    - type: log
+      paths:
+        - /var/log/apache2/*.log  # Ruta de los logs de Apache en los contenedores
+    output.elasticsearch:
+      hosts: ["http://elasticsearch:9200"]  # Dirección de Elasticsearch en el clúster de Kubernetes
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filebeat
+  labels:
+    app: filebeat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: filebeat
+  template:
+    metadata:
+      labels:
+        app: filebeat
+    spec:
+      containers:
+      - name: filebeat
+        image: docker.elastic.co/beats/filebeat:8.1.2
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log/apache2  # Ruta de los logs de Apache en los pods
+        - name: config-volume
+          mountPath: /usr/share/filebeat/filebeat.yml  # Ruta del archivo de configuración
+          subPath: filebeat.yml
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log/apache2  # Ruta de los logs de Apache en los nodos
+      - name: config-volume
+        configMap:
+          name: filebeat-config  # Nombre del ConfigMap que contiene la configuración de Filebeat
