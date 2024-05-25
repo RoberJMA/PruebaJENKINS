@@ -4,7 +4,6 @@ Vagrant.configure("2") do |config|
     master.vm.box = "ubuntu/bionic64"
     master.vm.hostname = "master"
     master.vm.network "private_network", ip: "192.168.56.10"
-    master.vm.network "public_network", type: "dhcp", bridge: "en0: Wi-Fi (AirPort)"
     master.vm.provider "virtualbox" do |vb|
       vb.memory = 2048
       vb.cpus = 2
@@ -17,7 +16,6 @@ Vagrant.configure("2") do |config|
       worker.vm.box = "ubuntu/bionic64"
       worker.vm.hostname = "worker#{i}"
       worker.vm.network "private_network", ip: "192.168.56.1#{i}"
-      worker.vm.network "public_network", type: "dhcp", bridge: "en0: Wi-Fi (AirPort)"
       worker.vm.provider "virtualbox" do |vb|
         vb.memory = 2048
         vb.cpus = 2
