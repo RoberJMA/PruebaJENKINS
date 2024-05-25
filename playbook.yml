@@ -26,18 +26,35 @@
       apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
       apt-get update -q
       apt-get install -qy kubeadm kubelet kubectl
+      
+  - name: Create /vagrant directory with permissions 777
+    file:
+      path: /vagrant
+      state: directory
+      mode: '0777'
+      
+  - name: Create /elk directory with permissions 777
+    file:
+      path: /vagrant/elk
+      state: directory
+      mode: '0777'
+      
   - name: Initialize Kubernetes master
     shell: kubeadm init --pod-network-cidr=10.244.0.0/16
     when: inventory_hostname == 'master'
+    
   - name: Copy kubeconfig to vagrant user
     command: cp /etc/kubernetes/admin.conf /home/vagrant/.kube/config
     when: inventory_hostname == 'master'
+    
   - name: Install Flannel network plugin
     shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
     when: inventory_hostname == 'master'
+    
   - name: Join worker nodes to the cluster
     shell: "{{ hostvars['master'].kubeadm_join_command }}"
     when: inventory_hostname != 'master'
+    
   - name: Get join command
     shell: kubeadm token create --print-join-command
     register: kubeadm_join_command
