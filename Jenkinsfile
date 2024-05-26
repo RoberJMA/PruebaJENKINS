@@ -82,10 +82,10 @@ pipeline {
         //     }
         // }
 
+        //En proceso, verificar funcionamiento de Selenium por si solo primero, para adaptarlo a la aplicacion desplegada con Kubernetes
         stage('Pruebas con Selenium') {
             steps {
                 script {
-                    // Ejecutar pruebas con Selenium apuntando al hub de Selenium en Kubernetes
                     sh '''
                     ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "cd $REPO_DIR/tests && pytest"
                     '''
