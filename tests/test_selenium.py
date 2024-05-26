@@ -7,7 +7,12 @@ import unittest
 class TestWebApp(unittest.TestCase):
 
     def setUp(self):
-        self.driver = webdriver.Chrome()
+        selenium_hub_url = 'http://selenium-hub:4444/wd/hub'
+        options = webdriver.ChromeOptions()
+        self.driver = webdriver.Remote(
+            command_executor=selenium_hub_url,
+            options=options
+        )
 
     def test_example(self):
         driver = self.driver
