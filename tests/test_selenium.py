@@ -16,7 +16,7 @@ class TestWebApp(unittest.TestCase):
 
     def test_example(self):
         driver = self.driver
-        driver.get("http://localhost:30080")  # URL de la aplicación desplegada
+        driver.get("https://192.168.56.10:30443")  # URL de la aplicación desplegada
         self.assertIn("phpMyAdmin", driver.title)
         elem = driver.find_element(By.NAME, "pma_username")
         elem.send_keys("root")
