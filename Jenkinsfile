@@ -62,6 +62,7 @@ pipeline {
             }
         }
 
+        //No funciona correctamente -> Si lanza kubernetes pero no se agregan correctamente los nodos
         stage('Desplegar Selenium Grid') {
             steps {
                 script {
@@ -72,6 +73,7 @@ pipeline {
             }
         }
 
+        //Comentado ya que consume muchos recursos-> Buen funcionamiento
         // stage('Desplegar ELK') {
         //     steps {
         //         script {
@@ -82,6 +84,7 @@ pipeline {
         //     }
         // }
 
+        //No funciona
         //En proceso, verificar funcionamiento de Selenium por si solo primero, para adaptarlo a la aplicacion desplegada con Kubernetes
         stage('Pruebas con Selenium') {
             steps {
