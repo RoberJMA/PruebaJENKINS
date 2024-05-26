@@ -2,17 +2,16 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = 'URL_DEL_REPOSITORIO' // Reemplazar con la URL del repositorio
+        REPO_URL = 'https://github.com/RoberJMA/PruebaJENKINS.git'
+        REPO_DIR = 'PruebaJENKINS'
+        SELENIUM_HUB_URL = 'http://selenium-hub:4444/wd/hub'
     }
 
     stages {
         stage('Preparar Entorno') {
             steps {
                 script {
-                    // Conectarse al servidor vía SSH
-                    sshagent(['id_rsa']) {
-                        sh 'ssh user@remote_server'
-                    }
+                    sh 'ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina exit'
                 }
             }
         }
@@ -20,10 +19,7 @@ pipeline {
         stage('Clonar Repositorio') {
             steps {
                 script {
-                    // Clonar el repositorio en la máquina remota
-                    sshagent(['id_rsa']) {
-                        sh 'ssh user@remote_server "git clone $REPO_URL"'
-                    }
+                    sh 'ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "git clone $REPO_URL || (cd $REPO_DIR && git pull)"'
                 }
             }
         }
@@ -31,21 +27,17 @@ pipeline {
         stage('Levantar VMs con Vagrant') {
             steps {
                 script {
-                    // Levantar las máquinas virtuales con Vagrant
-                    sshagent(['id_rsa']) {
-                        sh 'ssh user@remote_server "cd ruta_del_repositorio && vagrant up"'
-                    }
+                    sh 'ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "cd $REPO_DIR && vagrant up"'
                 }
             }
         }
 
-        stage('Aprovisionar VMs con Ansible') {
+        stage('Gestion de archivos') {
             steps {
                 script {
-                    // Aprovisionar las máquinas virtuales con Ansible
-                    sshagent(['id_rsa']) {
-                        sh 'ssh user@remote_server "cd ruta_del_repositorio && ansible-playbook -i vagrant-inventory playbook.yml"'
-                    }
+                    sh '''
+                    ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "cd $REPO_DIR && vagrant ssh controlplane -c 'cd /home/vagrant && git clone $REPO_URL && cd $REPO_DIR && mv *.yaml /vagrant && mv *.sql /vagrant'"
+                    '''
                 }
             }
         }
@@ -53,10 +45,9 @@ pipeline {
         stage('Desplegar Kubernetes') {
             steps {
                 script {
-                    // Desplegar los servicios de Kubernetes
-                    sshagent(['id_rsa']) {
-                        sh 'ssh user@remote_server "kubectl apply -f ruta_del_repositorio/proyecto.yml"'
-                    }
+                    sh '''
+                    ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "cd $REPO_DIR && vagrant ssh controlplane -c 'kubectl apply -f /vagrant/proyecto.yml'"
+                    '''
                 }
             }
         }
@@ -64,37 +55,40 @@ pipeline {
         stage('Comprobar Despliegue') {
             steps {
                 script {
-                    // Comprobar que todos los pods están corriendo
-                    sshagent(['id_rsa']) {
-                        sh 'ssh user@remote_server "kubectl get all"'
-                    }
+                    sh '''
+                    ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "cd $REPO_DIR && vagrant ssh controlplane -c 'kubectl get all'"
+                    '''
                 }
             }
         }
 
-        stage('Desplegar ELK') {
+        stage('Desplegar Selenium Grid') {
             steps {
                 script {
-                    // Desplegar ELK stack
-                    sshagent(['id_rsa']) {
-                        sh '''
-                        ssh user@remote_server "kubectl apply -f ruta_del_repositorio/pvc.yaml"
-                        ssh user@remote_server "kubectl apply -f ruta_del_repositorio/elastic-ss.yaml"
-                        ssh user@remote_server "kubectl apply -f ruta_del_repositorio/kibana.yaml"
-                        ssh user@remote_server "kubectl apply -f ruta_del_repositorio/filebeat.yaml"
-                        '''
-                    }
+                    sh '''
+                    ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "cd $REPO_DIR && vagrant ssh controlplane -c 'kubectl apply -f /vagrant/selenium-hub-deployment.yaml && kubectl apply -f /vagrant/selenium-node-chrome-deployment.yaml && kubectl apply -f /vagrant/selenium-node-firefox-deployment.yaml && kubectl apply -f /vagrant/selenium-hub-service.yaml'"
+                    '''
                 }
             }
         }
+
+        // stage('Desplegar ELK') {
+        //     steps {
+        //         script {
+        //             sh '''
+        //             ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "cd $REPO_DIR && vagrant ssh controlplane -c 'kubectl apply -f /vagrant/pvc.yaml && kubectl apply -f /vagrant/kibana.yaml && kubectl apply -f /vagrant/filebeat.yaml'"
+        //             '''
+        //         }
+        //     }
+        // }
 
         stage('Pruebas con Selenium') {
             steps {
                 script {
-                    // Ejecutar pruebas con Selenium
-                    sshagent(['id_rsa']) {
-                        sh 'ssh user@remote_server "cd ruta_del_repositorio/tests && pytest"'
-                    }
+                    // Ejecutar pruebas con Selenium apuntando al hub de Selenium en Kubernetes
+                    sh '''
+                    ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "cd $REPO_DIR/tests && pytest"
+                    '''
                 }
             }
         }
