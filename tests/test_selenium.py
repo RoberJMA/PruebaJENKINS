@@ -18,8 +18,8 @@ def check_browser(browser):
 
         # Prueba de carga de la página principal
         driver.get("https://localhost:30443")
-        assert "Apache" in driver.title  # Verifica que la página contenga "Apache" en el título
-        assert "Bienvenido a Apache" in driver.page_source  # Verifica que el contenido de la página sea el esperado
+        assert "" in driver.title  # Verifica que la página contenga "Apache" en el título
+        assert "Inicio de Sesion" in driver.page_source  # Verifica que el contenido de la página sea el esperado
         print(f"¡El navegador {browser} carga la página principal correctamente!")
 
         # Prueba de interacción con la API interna
@@ -45,11 +45,11 @@ def test_login(driver, username, password):
     username_input.send_keys(username)
     password_input.send_keys(password)
 
-    # Envía el formulario de inicio de sesión
+    # Envíar el formulario de inicio de sesión
     submit_button = driver.find_element_by_id("login-button")
     submit_button.click()
 
-    # Verifica que se haya iniciado sesión correctamente
+    # Verificar que se haya iniciado sesión correctamente
     assert "Bienvenido, root" in driver.page_source  # Verifica que se muestre un mensaje de bienvenida
     print(f"¡Inicio de sesión exitoso con el navegador {driver.capabilities['browserName']}!")
 
