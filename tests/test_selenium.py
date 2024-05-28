@@ -2,15 +2,22 @@ import time
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException, NoSuchElementException
 
-def test_selenium_docker_compose(url, username, password):
+def test_selenium_kubernetes():
     try:
+        # URL a probar
+        url = "http://localhost:31351/"
+
+        # Credenciales de inicio de sesión
+        username = "root"
+        password = "1234"
+
         # Configuración del navegador
         options = webdriver.ChromeOptions()
         options.add_argument('--ignore-certificate-errors')  # Ignorar errores de certificado SSL
         
-        # Inicializar el navegador apuntando al servicio de Selenium Hub en el Docker Compose
+        # Inicializar el navegador apuntando al servicio de Selenium Hub en Kubernetes
         driver = webdriver.Remote(
-            command_executor='http://localhost:4444/wd/hub',
+            command_executor='http://localhost:31351/wd/hub',
             options=options
         )
         
@@ -62,12 +69,5 @@ def test_selenium_docker_compose(url, username, password):
     except WebDriverException as e:
         print(f"Error al iniciar el navegador: {e}")
 
-# URL a probar
-url = "https://192.168.56.10:30443/"
-
-# Credenciales de inicio de sesión
-username = "root"
-password = "1234"
-
 # Ejecutar la prueba
-test_selenium_docker_compose(url, username, password)
+test_selenium_kubernetes()
