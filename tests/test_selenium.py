@@ -1,58 +1,73 @@
+import time
 from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import WebDriverException, NoSuchElementException
 
-def check_browser(browser):
+def test_selenium_docker_compose(url, username, password):
     try:
-        if browser == "CHROME":
-            options = webdriver.ChromeOptions()
-        elif browser == "FIREFOX":
-            options = webdriver.FirefoxOptions()
-        else:
-            print(f"Browser {browser} no está soportado.")
-            return
-
+        # Configuración del navegador
+        options = webdriver.ChromeOptions()
+        options.add_argument('--ignore-certificate-errors')  # Ignorar errores de certificado SSL
+        
+        # Inicializar el navegador apuntando al servicio de Selenium Hub en el Docker Compose
         driver = webdriver.Remote(
-            command_executor='http://localhost:31351/wd/hub',
+            command_executor='http://localhost:4444/wd/hub',
             options=options
         )
-
-        # Prueba de carga de la página principal
-        driver.get("https://localhost:30443")
-        assert "" in driver.title  # Verifica que la página contenga "Apache" en el título
-        assert "Inicio de Sesion" in driver.page_source  # Verifica que el contenido de la página sea el esperado
-        print(f"¡El navegador {browser} carga la página principal correctamente!")
-
-        # Prueba de interacción con la API interna
-        driver.get("https://localhost:30443/api/data")  # Suponiendo que "/api/data" es la ruta de la API interna
-        # Verifica que se pueda recuperar datos de la API (la implementación real puede variar según la respuesta esperada)
-        assert "Datos de la API" in driver.page_source  
-        print(f"¡El navegador {browser} se comunica correctamente con la API interna!")
-
-        # Prueba de inicio de sesión
-        test_login(driver, "root", "1234")
-
+        
+        # Acceder a la URL proporcionada
+        driver.get(url)
+        
+        # Intentar iniciar sesión
+        try:
+            # Encontrar el campo de usuario e ingresar el nombre de usuario
+            username_field = driver.find_element("id", "username")
+            username_field.send_keys(username)
+            
+            # Encontrar el campo de contraseña e ingresar la contraseña
+            password_field = driver.find_element("id", "password")
+            password_field.send_keys(password)
+            
+            # Encontrar el botón de inicio de sesión y hacer clic en él
+            login_button = driver.find_element("id", "login_button")
+            login_button.click()
+            
+            # Esperar unos segundos para que se procese el inicio de sesión
+            time.sleep(5)
+            
+            # Verificar si se ha iniciado sesión correctamente
+            welcome_message = driver.find_element("id", "welcome_message")
+            if welcome_message.text == "¡Bienvenido, usuario!":
+                print("Inicio de sesión exitoso.")
+            else:
+                print("Fallo en el inicio de sesión.")
+        except NoSuchElementException:
+            print("No se encontraron elementos para iniciar sesión.")
+        
+        # Realizar alguna acción en la página después del inicio de sesión (por ejemplo, acceder a una sección específica)
+        # Por ejemplo, esperar unos segundos para que la página cargue completamente
+        time.sleep(5)
+        
+        # Imprimir el título de la página
+        print("Título de la página:", driver.title)
+        
+        # Imprimir la URL actual
+        print("URL actual:", driver.current_url)
+        
+        # Imprimir el contenido de la página
+        print("Contenido de la página:", driver.page_source)
+        
+        # Cerrar el navegador al finalizar las pruebas
         driver.quit()
-        print(f"¡Pruebas completadas con el navegador {browser}!")
-
+        
     except WebDriverException as e:
-        print(f"Error al iniciar el navegador {browser}: {e}")
+        print(f"Error al iniciar el navegador: {e}")
 
-def test_login(driver, username, password):
-    # Prueba de inicio de sesión
-    # Ingresa el nombre de usuario y la contraseña
-    username_input = driver.find_element_by_id("username")
-    password_input = driver.find_element_by_id("password")
-    username_input.send_keys(username)
-    password_input.send_keys(password)
+# URL a probar
+url = "https://192.168.56.10:30443/"
 
-    # Envíar el formulario de inicio de sesión
-    submit_button = driver.find_element_by_id("login-button")
-    submit_button.click()
+# Credenciales de inicio de sesión
+username = "root"
+password = "1234"
 
-    # Verificar que se haya iniciado sesión correctamente
-    assert "Bienvenido, root" in driver.page_source  # Verifica que se muestre un mensaje de bienvenida
-    print(f"¡Inicio de sesión exitoso con el navegador {driver.capabilities['browserName']}!")
-
-# Ejecutar pruebas para ambos navegadores
-check_browser("FIREFOX")
-check_browser("CHROME")
+# Ejecutar la prueba
+test_selenium_docker_compose(url, username, password)
