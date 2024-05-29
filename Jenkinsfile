@@ -4,7 +4,7 @@ pipeline {
     environment {
         REPO_URL = 'https://github.com/RoberJMA/PruebaJENKINS.git'
         REPO_DIR = 'PruebaJENKINS'
-        SELENIUM_HUB_URL = 'http://192.168.56.10:31351/wd/hub'
+        SELENIUM_HUB_URL = 'http://192.168.56.10:31351'
     }
 
     stages {
