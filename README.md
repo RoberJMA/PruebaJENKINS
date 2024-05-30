@@ -30,8 +30,12 @@ Deberías ver algo como esto:
     -rw-r--r-- 1 jenkins jenkins  745 May 25 10:00 id_rsa.pub
 
 Copiar la Clave Pública al Servidor Remoto
+    
+    cat ~/.ssh/id_rsa.pub | ssh usuario@servidor_remoto 'cat >> ~/.ssh/authorized_keys'
 
-    sshpass -p 'mi_contraseña' ssh-copy-id -i /var/jenkins_home/.ssh/id_rsa.pub usuario@ip_destino
+o
+    
+    ssh-copy-id -i /var/jenkins_home/.ssh/id_rsa.pub usuario@ip_destino
 
 Reemplaza 'mi_contraseña' con la contraseña real del usuario.
 
