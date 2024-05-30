@@ -76,7 +76,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "cd $REPO_DIR && vagrant ssh controlplane -c 'kubectl apply -f /vagrant/pvc.yaml && kubectl apply -f /vagrant/kibana.yaml && kubectl apply -f /vagrant/filebeat.yaml'"
+                    ssh -i /var/jenkins_home/.ssh/id_rsa usuario@ip_maquina "cd $REPO_DIR && vagrant ssh controlplane -c 'kubectl apply -f /vagrant/pv.yaml && kubectl apply -f /vagrant/kibana.yaml && kubectl apply -f /vagrant/filebeat.yaml'"
                     '''
                 }
             }
