@@ -33,10 +33,6 @@ Copiar la Clave Pública al Servidor Remoto
     
     cat ~/.ssh/id_rsa.pub | ssh usuario@servidor_remoto 'cat >> ~/.ssh/authorized_keys'
 
-o
-    
-    ssh-copy-id -i /var/jenkins_home/.ssh/id_rsa.pub usuario@ip_destino
-
 Reemplaza 'mi_contraseña' con la contraseña real del usuario.
 
 Realizados los pasos anteriores, podras conectarte a la maquina desde la pipeline con 
